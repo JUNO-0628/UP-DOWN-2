@@ -1,0 +1,17 @@
+{
+    "name": "guest",
+    "level": 1,
+    "exp": 0,
+    "money": 0,
+    "admin": 0,
+    "record": [
+        null,
+        null,
+        null,
+        null
+    ],
+    "skin": "기본",
+    "skin_owned": [
+        "기본"
+    ]
+}

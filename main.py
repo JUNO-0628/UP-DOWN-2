@@ -1,5 +1,4 @@
 # 개발 시작일 : 2026.03.20
-# 개발 종료 : 2026.04.03
 # UP! & DOWN! 2
 
 import os
@@ -22,6 +21,7 @@ user_data = {
     'money': 0,
     'admin': 0,
     'record': [None,None,None,None],
+    'challenge_record' : None,
     'skin': '기본',
     'skin_owned': ['기본']
 }
@@ -51,6 +51,8 @@ def load_data():
                 user_data['admin'] = 0
             if 'record' not in user_data:
                 user_data['record'] = [None,None,None,None]
+            if 'challenge_record' not in user_data:
+                user_data['challenge_record'] = None
             if 'skin' not in user_data:
                 user_data['skin'] = '기본'
             if 'skin_owned' not in user_data:
@@ -67,6 +69,7 @@ def load_data():
             'money': 0,
             'admin': 0,
             'record': [None,None,None,None],
+            'challenge_record' : None,
             'skin': '기본',
             'skin_owned': ['기본']
         }
@@ -78,19 +81,26 @@ if os.path.exists(DATA_FILE):
     os.system('cls')
     print(Fore.YELLOW + '[ 파일 확인됨 ]')
     print(f"📂 자동으로 {user_data['name']}의 데이터를 불러옵니다...📂")
-    time.sleep(2)
+    time.sleep(1)
 else:
     os.system('cls')
-    print(Fore.YELLOW + '게임 최초실행시에만 실행되는 화면입니다. (닉네임은 추후에도 변경 가능합니다.)')
+    print(Fore.YELLOW + '게임 최초실행 시 실행되는 화면입니다. (닉네임은 추후 설정에서 변경 가능합니다.)')
     user_data['name'] = input('닉네임을 설정해주세요: ')
     save_data()
 
-# 기록 업데이트 함수
+# 일반 모드 기록 업데이트 함수
 def update_record(index, attempt):
     if user_data['record'][index] is None:
         user_data['record'][index] = attempt
     else:
         user_data['record'][index] = min(user_data['record'][index], attempt)
+
+# 챌린지 모드 기록 업데이트 함수
+def update_challenge_record(challenge_round):
+    if user_data['challenge_record'] is None:
+        user_data['challenge_record'] = challenge_round
+    else:
+        user_data['challenge_record'] = max(user_data['challenge_record'], challenge_round)
 
 # 레벨업 함수
 def level_up():
@@ -111,25 +121,29 @@ def skin_check():
     elif user_data['skin'] == '별':
         UP_text = Fore.YELLOW + '🌠 UP 🌠'
         DOWN_text = Fore.YELLOW + '🌠 DOWN 🌠'
-    elif user_data['skin'] == '캔디':
-        UP_text = Fore.CYAN + '🍬 UP 🍬'
-        DOWN_text = Fore.CYAN + '🍬 DOWN 🍬'
+    elif user_data['skin'] == '파도':
+        UP_text = Fore.CYAN + '🌊 UP 🌊'
+        DOWN_text = Fore.CYAN + '🌊 DOWN 🌊'
+
+# cls (터미널 클리어 함수)
+def cls():
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 # 게임 기본 변수
-game_version = 'v.1.0'
-exp_limit = 100
+game_version = 'v.1.35'
+exp_limit = 100 # 경험치는 고정
 difficult = ['쉬움', '보통', '어려움', '매우 어려움']
 
 # 게임 메인 루프
 while True:
+    cls()
     load_data()
     skin_check()
-    os.system('cls')
-    print(Fore.YELLOW + '[ UP! & DOWN! II ]')
-    print(f'이름: {user_data['name']}, 돈: {user_data["money"]}')
+    print(Fore.YELLOW + '[ UP! & DOWN! 2 ]')
+    print(f'이름: {user_data['name']}')
     print(f'레벨: {user_data["level"]} [경험치: { user_data["exp"]}/100]')
-    print(f'현재 스킨: {user_data["skin"]}')
-    print('1. 게임시작 / 2. 상점 / 3. 기록 / 4. 설정 / 5. 게임종료')
+    print(f'돈: {user_data["money"]} | 스킨: '+ Fore.YELLOW + f'{user_data["skin"]}')
+    print('1. 게임시작 | 2. 상점 | 3. 기록 | 4. 설정 | 5. 게임종료')
     menu_selc = input(Fore.YELLOW + '메뉴를 선택해주세요: ')
 
     # 게임코드
@@ -137,100 +151,196 @@ while True:
         clear = 0
         while True:
             if clear == 0:
-                os.system('cls')
-                print('[ 난이도 ]')
-                print('1. 쉬움 / 2. 보통 / 3. 어려움 / 4. 매우 어려움 / 5. 나가기')
-                difficult_selc = input('난이도를 선택해주세요: ')
-                if difficult_selc == '1':
-                    answer = random.randint(1, 50)
-                    num = 50
-                    diff = '쉬움'
-                    diff_exp = 25
-                    diff_money = 50
-                elif difficult_selc == '2':
-                    answer = random.randint(1, 100)
-                    num = 100
-                    diff = '보통'
-                    diff_exp = 50
-                    diff_money = 100
-                elif difficult_selc == '3':
+                cls()
+                print(Fore.YELLOW + '[ 게임모드 선택 ]')
+                print('1. 일반 모드 | 2. 챌린지 모드 |3. ❌ 나가기❌')
+                game_mode = input(Fore.YELLOW + '게임모드를 선택해 주세요 : ')
+                
+                # 일반 모드
+                if game_mode == '1':
+                    while True:
+                        if clear == 0:
+                            cls()
+                            print('[ 난이도 ]')
+                            print('1.😊 쉬움😊  | 2.🙂 보통🙂 | 3.☹️ 어려움☹️  | 4.😡 매우 어려움😡 | 5.❌ 나가기❌')
+                            difficult_selc = input(Fore.YELLOW + '난이도를 선택해주세요: ')
+                            if difficult_selc == '1':
+                                answer = random.randint(1, 50)
+                                num = 50
+                                diff = '😊 쉬움😊'
+                                diff_exp = 25
+                                diff_money = 50
+                                diff_num = 0
+                            elif difficult_selc == '2':
+                                answer = random.randint(1, 100)
+                                num = 100
+                                diff = '🙂 보통🙂'
+                                diff_exp = 50
+                                diff_money = 100
+                                diff_num = 1
+                            elif difficult_selc == '3':
+                                answer = random.randint(1, 1000)
+                                num = 1000
+                                diff = '☹️ 어려움☹️'
+                                diff_exp = 100
+                                diff_money = 250
+                                diff_num = 2
+                            elif difficult_selc == '4':
+                                answer = random.randint(1, 10000)
+                                num = 10000
+                                diff = '😡 매우 어려움😡'
+                                diff_exp = 200
+                                diff_money = 500
+                                diff_num = 3
+                            elif difficult_selc == '5':
+                                break
+                            else:
+                                print("올바른 난이도를 선택해주세요 (1~5)")
+                                continue
+
+                            attempt = 0
+                            cls()
+                            print('[ 일반 모드 ]')
+                            print(Fore.YELLOW + ('현재 난이도:' + diff))
+                            if user_data['record'][diff_num] == None:
+                                print(Fore.YELLOW + f'현재 난이도 최고기록 : ❌ 기록없음❌')
+                            else:
+                                print(Fore.YELLOW + f'현재 난이도 최고기록 : 👑 {user_data['record'][diff_num]}회👑')
+                            while True:
+                                try:
+                                    user_num = int(input(f'1 ~ {num}까지 랜덤한 숫자를 맞춰보세요 :'))
+                                except ValueError:
+                                    print("숫자만 입력해주세요!")
+                                    continue  # 다시 입력받도록 반복문 처음으로 돌아감
+
+                                if user_num == answer:
+                                    cls()
+                                    print(Fore.YELLOW + '정답입니다!')
+                                    print('==============================')
+                                    if user_data['record'][diff_num] is None or user_data['record'][diff_num] > attempt:
+                                        print(Fore.YELLOW + '신기록!')
+                                    print(f'현재 시도 횟수 : {attempt}회')
+                                    if user_data['record'][diff_num] == None:
+                                        print('이전 최고 기록 : ❌ 기록 없음❌')
+                                    else:
+                                        print(f'이전 최고 기록 : {user_data['record'][diff_num]}회')
+                                    update_record(int(difficult_selc)-1, attempt)
+                                    print('==============================')
+                                    user_data['money'] += diff_money
+                                    user_data['exp'] += diff_exp
+                                    level_up()
+                                    
+                                    print(f'돈 +{diff_money}, 경험치 +{diff_exp}')
+                                    input('엔터를 눌러 돌아가기')
+                                    clear = 1
+                                    save_data()
+                                    break
+
+                                elif user_num > answer:
+                                    print(DOWN_text)
+                                    attempt += 1
+
+                                elif user_num < answer:
+                                    print(UP_text)
+                                    attempt += 1
+                        else:
+                            break
+
+                # 챌린지 모드
+                elif game_mode == '2':
+                    clear = 0
+                    lives = 10
+                    challenge_round = 1
                     answer = random.randint(1, 1000)
-                    num = 1000
-                    diff = '어려움'
-                    diff_exp = 100
-                    diff_money = 250
-                elif difficult_selc == '4':
-                    answer = random.randint(1, 10000)
-                    num = 10000
-                    diff = '매우 어려움'
-                    diff_exp = 150
-                    diff_money = 500
-                elif difficult_selc == '5':
+                    cls()
+                    print(Fore.YELLOW + '[ 챌린지 모드 ]')
+                    print(f'현재 라운드 : {challenge_round}')
+                    print('목숨이 0이 되면 게임오버 됩니다!!')
+                    while True:
+                        if lives > 0:
+                            try:
+                                print(Fore.YELLOW + f'목숨 : {lives}')
+                                user_num = int(input(f'1 ~ 1000까지 랜덤한 숫자를 맞춰보세요 : '))
+                            except ValueError:
+                                print("숫자만 입력해주세요!")
+                                continue  # 다시 입력받도록 반복문 처음으로 돌아감
+                            
+                            # 정답
+                            if user_num == answer:
+                                cls()
+                                print('정답입니다!')
+                                input('Enter를 눌러 다음라운드로...')
+                                challenge_round += 1
+                                
+                                lives += 10
+                                answer = random.randint(1, 1000)
+
+                                cls()
+                                print(Fore.YELLOW + '[ 챌린지 모드 ]')
+                                print(f'현재 라운드 : {challenge_round}')
+                                print('목숨이 0이 되면 게임오버 됩니다!!')
+
+                            # 업
+                            elif user_num < answer:
+                                print(f'{UP_text} | 목숨 -1')
+                                lives -= 1
+                                
+                            # 다운
+                            elif user_num > answer:
+                                print(f'{DOWN_text} | 목숨 -1')
+                                lives -= 1
+                            
+                        else:
+                            cls()
+                            print('게임 오버')
+                            print(f'경험치 +{150 * (challenge_round - 1)}')
+                            print(f'돈 +{350 * (challenge_round - 1)}')
+                            input('Enter를 눌러 돌아가기')
+                            user_data['exp'] += 150 * (challenge_round - 1)
+                            user_data['money'] += 350 * (challenge_round - 1)
+                            level_up()
+                            update_challenge_record(challenge_round)
+                            clear = 1
+                            save_data()
+                            break
+
+                # 나가기
+                elif game_mode == '3':
                     break
-                attempt = 0
-                os.system('cls')
-                print(Fore.YELLOW + ('현재 난이도:' + diff))
-                while True:
-                    try:
-                        user_num = int(input(f'1 ~ {num}까지 랜덤한 숫자를 맞춰보세요 :'))
-                    except ValueError:
-                        print("숫자만 입력해주세요!")
-                        continue  # 다시 입력받도록 반복문 처음으로 돌아감
 
-                    if user_num == answer:
-                        print('정답입니다!')
-                        print(f'시도횟수 : {attempt}')
-                        update_record(int(difficult_selc)-1, attempt)
-                        level_up()
-                        user_data['money'] += diff_money
-                        user_data['exp'] += diff_exp
-                        
-                        print(f'돈 +{diff_money}, 경험치 +{diff_exp}')
-                        input('엔터를 눌러 돌아가기')
-                        clear = 1
-                        save_data()
-                        break
-
-                    elif user_num > answer:
-                        print(DOWN_text)
-                        attempt += 1
-
-                    elif user_num < answer:
-                        print(UP_text)
-                        attempt += 1
             else:
                 break
 
     # 상점
     elif menu_selc == '2':
         while True:
-            os.system('cls')
+            cls()
             print(Fore.YELLOW + '[ 스킨 상점 ]')
             # 하트
             if '하트' in user_data['skin_owned']:
                 if user_data['skin'] == '하트':
-                    print("1." + Fore.MAGENTA + '💖 UP 💖 / 💖 DOWN 💖'+ Fore.BLUE + ' [장착중]')
+                    print("1. 하트 | " + Fore.MAGENTA + '💖 UP 💖 | 💖 DOWN 💖'+ Fore.BLUE + ' [장착중]')
                 else:
-                    print("1." + Fore.MAGENTA + '💖 UP 💖 / 💖 DOWN 💖'+ Fore.GREEN + ' [보유중]')
+                    print("1. 하트 | " + Fore.MAGENTA + '💖 UP 💖 | 💖 DOWN 💖'+ Fore.GREEN + ' [보유중]')
             else:
-                print("1." + Fore.MAGENTA + '💖 UP 💖 / 💖 DOWN 💖', ' [가격 : 1500원]')
+                print("1. 하트 | " + Fore.MAGENTA + '💖 UP 💖 | 💖 DOWN 💖', ' [가격 : 1500원]')
             # 별
             if '별' in user_data['skin_owned']:
                 if user_data['skin'] == '별':
-                    print("2." + Fore.YELLOW + '🌠 UP 🌠 / 🌠 DOWN 🌠'+ Fore.BLUE + ' [장착중]')
+                    print("2. 별   | " + Fore.YELLOW + '🌠 UP 🌠 | 🌠 DOWN 🌠'+ Fore.BLUE + ' [장착중]')
                 else:
-                    print("2." + Fore.YELLOW + '🌠 UP 🌠 / 🌠 DOWN 🌠'+ Fore.GREEN + ' [보유중]')
+                    print("2. 별   | " + Fore.YELLOW + '🌠 UP 🌠 | 🌠 DOWN 🌠'+ Fore.GREEN + ' [보유중]')
             else:
-                print("2." + Fore.YELLOW + '🌠 UP 🌠 / 🌠 DOWN 🌠', ' [가격 : 2500원]')
+                print("2. 별   | " + Fore.YELLOW + '🌠 UP 🌠 | 🌠 DOWN 🌠', ' [가격 : 2500원]')
 
-            # 캔디
-            if '캔디' in user_data['skin_owned']:
-                if user_data['skin'] == '캔디':
-                    print("3." + Fore.CYAN + '🍬 UP 🍬 / 🍬 DOWN 🍬'+ Fore.BLUE + ' [장착중]')
+            # 파도
+            if '파도' in user_data['skin_owned']:
+                if user_data['skin'] == '파도':
+                    print("3. 파도 | " + Fore.CYAN + '🌊 UP 🌊 | 🌊 DOWN 🌊'+ Fore.BLUE + ' [장착중]')
                 else:
-                    print("3." + Fore.CYAN + '🍬 UP 🍬 / 🍬 DOWN 🍬'+ Fore.GREEN + ' [보유중]')
+                    print("3. 파도 | " + Fore.CYAN + '🌊 UP 🌊 | 🌊 DOWN 🌊'+ Fore.GREEN + ' [보유중]')
             else:
-                print("3." + Fore.CYAN + '🍬 UP 🍬 / 🍬 DOWN 🍬', ' [가격 : 3500원]')
+                print("3. 파도 | " + Fore.CYAN + '🌊 UP 🌊 | 🌊 DOWN 🌊', ' [가격 : 3500원]')
 
             print('4. 나가기')
             shop_selc = input(Fore.YELLOW + '메뉴를 선택해주세요: ')
@@ -238,7 +348,7 @@ while True:
             # 하트 구매/장착
             if shop_selc == '1':
                 if '하트' in user_data['skin_owned']:
-                    os.system('cls')
+                    cls()
                     print('스킨이 장착되었습니다.')
                     user_data['skin'] = '하트'
                     save_data()
@@ -247,18 +357,18 @@ while True:
                     user_data['money'] -= 1500
                     user_data['skin_owned'].append('하트')
                     save_data()
-                    os.system('cls')
+                    cls()
                     print('구매가 완료되었습니다.')
                     input('Enter를 눌러 돌아가기')
                 else:
-                    os.system('cls')
+                    cls()
                     print('돈이 부족합니다.')
                     input('Enter를 눌러 돌아가기')
             
             # 별 구매/장착
             if shop_selc == '2':
                 if '별' in user_data['skin_owned']:
-                    os.system('cls')
+                    cls()
                     print('스킨이 장착되었습니다.')
                     user_data['skin'] = '별'
                     save_data()
@@ -267,63 +377,88 @@ while True:
                     user_data['money'] -= 2500
                     user_data['skin_owned'].append('별')
                     save_data()
-                    os.system('cls')
+                    cls()
                     print('구매가 완료되었습니다.')
                     input('Enter를 눌러 돌아가기')
                 else:
-                    os.system('cls')
+                    cls()
                     print('돈이 부족합니다.')
                     input('Enter를 눌러 돌아가기')
             
-            # 캔디 구매/장착
+            # 파도 구매/장착
             elif shop_selc == '3':
-                if '캔디' in user_data['skin_owned']:
-                    os.system('cls')
+                if '파도' in user_data['skin_owned']:
+                    cls()
                     print('스킨이 장착되었습니다.')
-                    user_data['skin'] = '캔디'
+                    user_data['skin'] = '파도'
                     save_data()
                     input('Enter를 눌러 돌아가기')
                 elif user_data['money'] >= 3500:
                     user_data['money'] -= 3500
-                    user_data['skin_owned'].append('캔디')
+                    user_data['skin_owned'].append('파도')
                     save_data()
-                    os.system('cls')
+                    cls()
                     print('구매가 완료되었습니다.')
                     input('Enter를 눌러 돌아가기')
                 else:
-                    os.system('cls')
+                    cls()
                     print('돈이 부족합니다.')
                     input('Enter를 눌러 돌아가기')
 
             elif shop_selc == '4':
                 break
+
     # 기록 (리더보드)
     elif menu_selc == '3':
-        os.system('cls')
-        print(Fore.YELLOW + '[ 기록 ]')
-        for i, rec in enumerate(user_data['record']):
-            if rec is not None:
-                print(f'{difficult[i]} : {rec}회')
-            else:
-                print(f'{difficult[i]} : 기록 없음')
+        cls()
+        print(Fore.YELLOW + '👑 난이도👑    👑 기록👑')
+        print('====================================')
+        if user_data['record'][0] == None:
+            print(f'    쉬움     | ❌ 기록없음❌')
+        else:
+            print(f'    쉬움     | 👑 {user_data['record'][0]} 회👑')
+
+        if user_data['record'][1] == None:
+            print(f'    보통     | ❌ 기록없음❌')
+        else:
+            print(f'    보통     | 👑 {user_data['record'][1]} 회👑')
+
+        if user_data['record'][2] == None:
+            print(f'   어려움    | ❌ 기록없음❌')
+        else:
+            print(f'   어려움    | 👑 {user_data['record'][2]} 회👑')
+
+        if user_data['record'][3] == None:
+            print(f' 매우 어려움 | ❌ 기록없음❌')
+        else:
+            print(f' 매우 어려움 | 👑 {user_data['record'][3]} 회👑')
+        print('====================================')
+        if user_data['challenge_record'] == None:
+            print(' 챌린지 모드 | ❌ 기록없음❌')
+        else:
+            print(f' 챌린지 모드 | 👑 {user_data['challenge_record']}라운드👑')
+        print('====================================')
         input('Enter를 눌러 돌아가기')
 
     # 설정
     elif menu_selc == '4':
         while True:
-            os.system('cls')
+            cls()
             print(Fore.YELLOW + '[ 설정 ]')
-            print('1. 닉네임 변경 / 2. 데이터 초기화 / 3. 패치 노트 / 4. 나가기')
+            print('1.♻️ 닉네임 변경 | 2.⚠️ 데이터 초기화 | 3.📋 패치 노트 | 4.❌ 나가기')
             setting_menu = input('메뉴를 선택해주세요: ')
             # 닉네임 변경
             if setting_menu == '1':
-                os.system('cls')
+                cls()
+                print(f'현재 닉네임 : {user_data['name']}')
                 user_data['name'] = input('변경할 닉네임을 입력해 주세요: ')
                 save_data()
+                print(f'✅ 닉네임을 {user_data['name']}으로 변경하였습니다!✅')
+                input('Enter를 눌러 돌아가기')
             
             # 초기화
             elif setting_menu == '2':
-                os.system('cls')
+                cls()
                 print('[ 초기화 ]')
                 reset_input = input('초기화 하시겠습니까? y/n : ')
                 if reset_input.lower() == 'y':
@@ -334,48 +469,52 @@ while True:
                         'money': 0,
                         'admin': 0,
                         'record': [None,None,None,None],
+                        'challenge_record' : None,
                         'skin': '기본',
                         'skin_owned': ['기본']
                     }
                     save_data()
-                    print('초기화 하였습니다.')
+                    cls()
+                    print('⚠️ 초기화 하였습니다.⚠️')
                     time.sleep(2)
                 elif reset_input.lower() == 'n':
-                    print('취소되었습니다.')
+                    cls()
+                    print('❌ 취소되었습니다.❌')
                     time.sleep(2)
 
             # 패치노트
             elif setting_menu == '3':
-                os.system('cls')
+                cls()
                 print(Fore.YELLOW + '[ 패치 노트 ]')
-                print(f'2026.04.03 - {game_version}')
-                print('- 무결성 검사 코드 오류 수정')
-                print('- 자동 불러오기 시스템 개선')
-                print('- 스킨 가격 조정')
-                print('- 게임종료 코드 개선(약 2초 단축)')
-                print('- 추가적인 디자인 개선')
-                print('- 게임 실행 오류 수정')
-                print('==================================')
-                print('업다운2의 마지막 업데이트입니다. 사후지원은 할 예정입니다!')
+                print(f'2026.04.12 - {game_version}')
+                print('=======================================')
+                print('- 챌린지 모드 추가')
+                print('- 챌린지 모드 기록 추가')
+                print('- 게임 클리어 시 얻는 보상 조정 (상향)')
+                print('- 이모지가 정상적으로 출력되지 않는 현상 수정')
+                print('- 추가적인 메모리 최적화')
+                print('- 코드 간소화')
+                print('- 무결성 검사 코드 수정')
+                print('=======================================')
                 input('Enter를 눌러 돌아가기')
 
             # 설정 나가기
             elif setting_menu == '4':
                 break 
 
+            # 디버그
+            elif setting_menu == 'debug':
+                cls()
+                print(user_data) # 유저 데이터
+                print(f'버전: {game_version}') # 게임 버전
+                input()
+                
     # 게임 종료
     elif menu_selc == '5':
-        os.system('cls')
+        cls()
         print('📂 데이터를 저장중입니다...📂')
         save_data()
         time.sleep(0.2)
         print('✅ 성공적으로 저장되었습니다! 게임을 종료합니다...✅')
         time.sleep(1)
         break
-    
-    # 디버그) 인게임에서 변수나 리스트 확인하는 용도
-    elif menu_selc == 'debug':
-        os.system('cls')
-        print(user_data) # 유저 데이터
-        print(f'버전: {game_version}') # 게임 버전
-        input()
